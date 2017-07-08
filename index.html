@@ -1,0 +1,144 @@
+<meta charset="utf-8"> <link rel="stylesheet" href="other/lhs.css">
+<script type="text/javascript" async
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<h1 id="fake">fake</h1>
+<h2 id="scratchpad">scratchpad</h2>
+<p><img style="border:2px solid grey" src="other/scratch.svg"></p>
+<h2 id="alpha">alpha</h2>
+<p><img style="border:2px solid grey" src="other/alpha.svg"></p>
+<span class="math display">\[\begin{align}
+\alpha &amp; = \frac{\sum y \sum x^2 - \sum x \sum xy}{n\sum x^2 - (\sum x)^2} \\
+      &amp; = \frac{n^2 \bar{y} \overline{x^2} - n^2 \bar{x} \overline{xy}}{n^2 \overline{x^2} - n^2 \bar{x}^2} \\
+      &amp; = \frac{\bar{y} \overline{x^2} - \bar{x} \overline{xy}}{\overline{x^2} - \bar{x}^2} \\
+
+\end{align}\]</span>
+<h2 id="beta">beta</h2>
+<p><img style="border:2px solid grey" src="other/beta.svg"></p>
+<span class="math display">\[\begin{align}
+\beta &amp; = \frac{n\sum xy - \sum x \sum y}{n\sum x^2 - (\sum x)^2} \\
+      &amp; = \frac{n^2 \overline{xy} - n^2 \bar{x} \bar{y}}{n^2 \overline{x^2} - n^2 \bar{x}^2} \\
+      &amp; = \frac{\overline{xy} - \bar{x} \bar{y}}{\overline{x^2} - \bar{x}^2} \\
+
+\end{align}\]</span>
+<h2 id="ghc-options"><a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/flags.html#flag-reference">ghc options</a></h2>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# OPTIONS_GHC -Wall #-}</span>
+<span class="ot">{-# OPTIONS_GHC -fno-warn-type-defaults #-}</span></code></pre></div>
+<h2 id="pragmas"><a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/lang.html">pragmas</a></h2>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="co">-- doctest doesn&#39;t look at the cabal file, so you need pragmas here</span>
+<span class="ot">{-# LANGUAGE NoImplicitPrelude #-}</span>
+<span class="ot">{-# LANGUAGE OverloadedStrings #-}</span>
+<span class="ot">{-# LANGUAGE DataKinds #-}</span>
+<span class="ot">{-# LANGUAGE DeriveGeneric #-}</span>
+<span class="ot">{-# LANGUAGE ScopedTypeVariables #-}</span>
+<span class="ot">{-# LANGUAGE TypeOperators #-}</span>
+<span class="ot">{-# LANGUAGE FlexibleInstances #-}</span></code></pre></div>
+<h2 id="libraries"><a href="https://www.stackage.org/">libraries</a></h2>
+<ul class="incremental">
+<li><a href="https://www.stackage.org/package/protolude">protolude</a></li>
+<li><a href="https://www.stackage.org/package/optparse-generic">optparse-generic</a></li>
+<li><a href="https://www.stackage.org/package/mwc-random">mwc-random</a></li>
+<li><a href="https://www.stackage.org/package/mwc-probability">mwc-probability</a></li>
+<li><a href="https://www.stackage.org/package/streaming">streaming</a></li>
+<li><a href="https://www.github.com/tonyday567/chart-unit">chart-unit</a></li>
+<li><a href="https://www.github.com/tonyday567/numhask">numhask</a></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Options.Generic</span>
+<span class="kw">import </span><span class="dt">Fake.Data</span>
+<span class="kw">import </span><span class="dt">System.Random.MWC</span>
+<span class="kw">import qualified</span> <span class="dt">Control.Foldl</span> <span class="kw">as</span> <span class="dt">L</span>
+<span class="kw">import </span><span class="dt">Streaming.Prelude</span>
+<span class="kw">import </span><span class="dt">Online</span>
+<span class="kw">import qualified</span> <span class="dt">NumHask.Prelude</span> <span class="kw">as</span> <span class="dt">P</span>
+<span class="kw">import </span><span class="dt">NumHask.Prelude</span> (<span class="dt">Maybe</span>(..), <span class="dt">IO</span>, (&amp;), ($), (.), (+), (*), (/), div, <span class="dt">Double</span>, (&gt;&gt;), <span class="dt">Integer</span>, (&lt;&gt;))
+<span class="kw">import </span><span class="dt">Chart</span> <span class="kw">hiding</span> (<span class="dt">Wrapped</span>, <span class="dt">Unwrapped</span>)
+<span class="kw">import </span><span class="dt">Control.Monad.Primitive</span> (<span class="dt">PrimState</span>)</code></pre></div>
+<h2 id="code">code</h2>
+<ul class="incremental">
+<li><a href="https://www.stackage.org/package/hoogle">hoogle</a></li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Opts</span> w <span class="fu">=</span> <span class="dt">Opts</span>
+    {<span class="ot"> streamMax ::</span> w <span class="ot">::</span><span class="fu">:</span> <span class="dt">Maybe</span> <span class="dt">Integer</span> <span class="fu">&lt;?&gt;</span> <span class="st">&quot;typical size of data stream&quot;</span>
+    ,<span class="ot"> testCorr ::</span> w <span class="ot">::</span><span class="fu">:</span> <span class="dt">Maybe</span> <span class="dt">Double</span> <span class="fu">&lt;?&gt;</span> <span class="st">&quot;test correlation&quot;</span>
+    ,<span class="ot"> rateCorr ::</span> w <span class="ot">::</span><span class="fu">:</span> <span class="dt">Maybe</span> <span class="dt">Double</span> <span class="fu">&lt;?&gt;</span> <span class="st">&quot;corr rate&quot;</span>
+    }
+    <span class="kw">deriving</span> (<span class="dt">Generic</span>)
+
+<span class="kw">instance</span> <span class="dt">ParseRecord</span> (<span class="dt">Opts</span> <span class="dt">Wrapped</span>)
+
+<span class="ot">scratch ::</span> <span class="dt">Chart</span> <span class="dt">SVG</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+scratch <span class="fu">=</span> fileSvg <span class="st">&quot;other/scratch.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>)
+
+<span class="ot">l1d ::</span> [<span class="dt">Double</span>] <span class="ot">-&gt;</span> <span class="dt">QDiagram</span> <span class="dt">SVG</span> <span class="dt">V2</span> <span class="dt">Double</span> <span class="dt">Any</span>
+l1d <span class="fu">=</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) <span class="fu">.</span> (<span class="fu">:</span>[]) <span class="fu">.</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>]
+
+<span class="ot">stdReg ::</span> <span class="dt">L.PrimMonad</span> m <span class="ot">=&gt;</span> <span class="dt">Gen</span> (<span class="dt">PrimState</span> m) <span class="ot">-&gt;</span> <span class="dt">Stream</span> (<span class="dt">Of</span> (<span class="dt">Double</span>, <span class="dt">Double</span>)) m ()
+stdReg gen <span class="fu">=</span> xy_ (repeat <span class="dv">0</span>) (repeat <span class="dv">1</span>) (rv_ gen (repeat <span class="dv">0</span>) (repeat <span class="dv">1</span>)) (rv_ gen (repeat <span class="dv">0</span>) (repeat <span class="dv">1</span>))
+
+<span class="ot">foldid ::</span> <span class="dt">L.Fold</span> <span class="dt">Double</span> <span class="dt">Double</span>
+foldid <span class="fu">=</span> <span class="dt">L.Fold</span> (\_ a <span class="ot">-&gt;</span> a) (<span class="dv">0</span><span class="fu">/</span><span class="dv">0</span>) P.identity
+
+<span class="ot">stdAuto ::</span>
+    <span class="dt">Double</span> <span class="ot">-&gt;</span>
+    <span class="dt">Stream</span> (<span class="dt">Of</span> <span class="dt">Double</span>) <span class="dt">IO</span> () <span class="ot">-&gt;</span>
+    <span class="dt">Stream</span> (<span class="dt">Of</span> <span class="dt">Double</span>) <span class="dt">IO</span> () <span class="ot">-&gt;</span>
+    <span class="dt">Stream</span> (<span class="dt">Of</span> <span class="dt">Double</span>) <span class="dt">IO</span> ()
+stdAuto r b x <span class="fu">=</span> zipWith (\(x&#39;,max&#39;) b&#39; <span class="ot">-&gt;</span> x&#39; <span class="fu">+</span> max&#39; <span class="fu">*</span> b&#39;) (x <span class="fu">&amp;</span> L.purely scan ((,) <span class="fu">&lt;$&gt;</span> foldid <span class="fu">&lt;*&gt;</span> ma r)) b
+
+<span class="ot">stdAuto&#39; ::</span>
+    <span class="dt">Double</span> <span class="ot">-&gt;</span>
+    <span class="dt">Stream</span> (<span class="dt">Of</span> <span class="dt">Double</span>) <span class="dt">IO</span> () <span class="ot">-&gt;</span>
+    <span class="dt">Stream</span> (<span class="dt">Of</span> <span class="dt">Double</span>) <span class="dt">IO</span> () <span class="ot">-&gt;</span>
+    <span class="dt">Stream</span> (<span class="dt">Of</span> (<span class="dt">Double</span>, <span class="dt">Double</span>, <span class="dt">Double</span>, <span class="dt">Double</span>)) <span class="dt">IO</span> ()
+stdAuto&#39; r b x <span class="fu">=</span> zipWith3 (\x&#39;&#39; (x&#39;,max&#39;) b&#39; <span class="ot">-&gt;</span> (x&#39;&#39;, x&#39;, max&#39;, b&#39;)) x (x <span class="fu">&amp;</span> L.purely scan ((,) <span class="fu">&lt;$&gt;</span> foldid <span class="fu">&lt;*&gt;</span> ma r)) b
+
+<span class="ot">main ::</span> <span class="dt">IO</span> ()
+main <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">    o ::</span> <span class="dt">Opts</span> <span class="dt">Unwrapped</span> <span class="ot">&lt;-</span> unwrapRecord <span class="st">&quot;testing fake data&quot;</span>
+    <span class="kw">let</span> n <span class="fu">=</span> P.fromMaybe <span class="dv">10000</span> (P.fromIntegral <span class="fu">&lt;$&gt;</span> streamMax o)
+    <span class="kw">let</span> c <span class="fu">=</span> P.fromMaybe <span class="fl">0.8</span> (testCorr o)
+    <span class="kw">let</span> r <span class="fu">=</span> P.fromMaybe <span class="fl">0.99</span> (rateCorr o)
+    gen <span class="ot">&lt;-</span> create
+
+<span class="co">-- (n,eff) &lt;- rvsp_ gen (repeat 0.5) &amp; L.purely scan (corr 0.99) &amp; drop 3 &amp; copy &amp; take 1000 &amp; toList_ &lt;&amp;&gt; take 100 &lt;&amp;&gt; l1d &lt;&amp;&gt; scratch &amp; length &lt;&amp;&gt; lazily</span>
+
+    avCorr <span class="ot">&lt;-</span>
+            rvsp_ gen (repeat <span class="dv">0</span> <span class="fu">&amp;</span> take (n <span class="ot">`P.div`</span> <span class="dv">2</span>) <span class="fu">&gt;&gt;</span> repeat c) <span class="fu">&amp;</span>
+            L.purely scan (corr (ma r) (std r)) <span class="fu">&amp;</span>
+            drop <span class="dv">2</span> <span class="fu">&amp;</span>
+            drop <span class="dv">100</span> <span class="fu">&amp;</span>
+            take n <span class="fu">&amp;</span>
+            L.purely fold_ av
+
+    corrL <span class="ot">&lt;-</span>
+            rvsp_ gen (repeat <span class="dv">0</span> <span class="fu">&amp;</span> take (n <span class="ot">`div`</span> <span class="dv">2</span>) <span class="fu">&gt;&gt;</span> repeat c) <span class="fu">&amp;</span>
+            L.purely scan (corr (ma r) (std r)) <span class="fu">&amp;</span>
+            drop <span class="dv">2</span> <span class="fu">&amp;</span>
+            drop <span class="dv">100</span> <span class="fu">&amp;</span>
+            take n <span class="fu">&amp;</span>
+            toList_
+
+    scratch <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] corrL, P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] (P.repeat c)]
+
+    P.putStrLn (<span class="st">&quot;average correlation of &quot;</span> <span class="fu">&lt;&gt;</span> P.show avCorr <span class="fu">&lt;&gt;</span> <span class="st">&quot; should be half of &quot;</span> <span class="fu">&lt;&gt;</span> P.show c <span class="fu">&lt;&gt;</span> <span class="st">&quot; 👍&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>)
+    P.writeFile <span class="st">&quot;other/answer.md&quot;</span>
+        (<span class="st">&quot;$\av_{i=1}^{&quot;</span> <span class="fu">&lt;&gt;</span> P.show n <span class="fu">&lt;&gt;</span> <span class="st">&quot;} corr = &quot;</span> <span class="fu">&lt;&gt;</span>
+         P.show avCorr <span class="fu">&lt;&gt;</span> <span class="st">&quot;$&quot;</span>)
+
+
+    rc <span class="ot">&lt;-</span> stdReg gen <span class="fu">&amp;</span> take n <span class="fu">&amp;</span> L.purely scan ((,) <span class="fu">&lt;$&gt;</span> alpha (ma r) <span class="fu">&lt;*&gt;</span> beta (ma r)) <span class="fu">&amp;</span> drop <span class="dv">2</span> <span class="fu">&amp;</span> toList_
+
+    <span class="kw">let</span> a <span class="fu">=</span> P.fst <span class="fu">&lt;$&gt;</span> rc
+    <span class="kw">let</span> b <span class="fu">=</span> P.snd <span class="fu">&lt;$&gt;</span> rc
+
+    fileSvg <span class="st">&quot;other/beta.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>) <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] b, P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] (P.repeat <span class="dv">1</span>)]
+
+
+    fileSvg <span class="st">&quot;other/alpha.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>) <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] a, P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] (P.repeat <span class="dv">0</span>)]
+
+
+    fileSvg <span class="st">&quot;other/scratch.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>) <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] a, P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] b]</code></pre></div>
+<p><span class="math inline">\(v_{i=1}^{10000} corr = 0.4023162622877611\)</span></p>
+<div class="footer">
+<p>Love to <a href="https://haskell-lang.org/">haskell</a>, <a href="https://docs.haskellstack.org/en/stable/README/">stack</a>, <a href="http://pandoc.org/">pandoc</a>, <a href="https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference">mathjax</a> and <a href="https://www.stackage.org/package/doctest">doctest</a>.</p>
+</div>

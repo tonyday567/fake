@@ -1,0 +1,14 @@
+resolver: lts-8.18
+
+packages:
+  - '.'
+  - '../online'
+  - location:
+      git: https://github.com/tonyday567/perf.git
+      commit: a98f403ceb92bba987dfd7cb4d3b65a6bdbd5a70
+    extra-dep: true
+
+extra-deps:
+  - numhask-0.0.4
+  - chart-unit-0.3.1
+  - numhask-range-0.0.2
