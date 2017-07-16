@@ -113,19 +113,44 @@ rvStd gen = rv_ gen (repeat 0) (repeat 1)
 stdReg :: L.PrimMonad m => Gen (PrimState m) -> Stream (Of (Double, Double)) m ()
 stdReg gen = xy_ (repeat 0) (repeat 1) (rvStd gen) (rvStd gen)
 
-foldid :: L.Fold Double Double
-foldid = L.Fold (\_ a -> a) (0/0) P.identity
+delay1 :: L.Fold Double Double
+delay1 = L.Fold (\_ a -> a) (0/0) P.identity
+-- just delaying the stream via `yield P.nan >> s` say doesn't really work, as the copy . _ . unseparate trick streams the nan first.  Streams are not zippy by ordering when the logic gets loopy
 
-delay1 :: Stream (Of Double) IO () -> Stream (Of Double) IO ()
-delay1 s = yield P.nan >> s
+delayn :: P.Int -> L.Fold Double Double
+delayn n = L.Fold (\_ a -> a) (0/0) P.identity
+-- just delaying the stream via `yield P.nan >> s` say doesn't really work, as the copy . _ . unseparate trick streams the nan first.  Streams are not zippy by ordering when the logic gets loopy
 
-delay :: P.Int -> Stream (Of Double) IO () -> Stream (Of Double) IO ()
-delay n s = repeat P.nan & take n >> s
 
-dup :: (P.Monad m) => Stream (Of a) m r -> Stream (Of (a,a)) m r
-dup = map (\x -> (x,x))
 
-type Pipe a b m r = Stream (Of a) m r -> Stream (Of b) m r
+
+-- | branching pipe
+-- each [1..4] & branch (L.purely scan L.sum) (map (*10)) & eitherToPair & toList_
+branch :: (P.Functor f, P.Monad (t (Stream f m2)), P.Monad m1, P.Monad m2, P.Monad m, S.MFunctor t, S.MonadTrans t) => (t (Stream f m2) r2 -> Stream (Of a1) (Stream (Of b) m1) r1) -> (Stream (Of a) (Stream (Of a) m) r -> Stream f (t m2) r2) -> Stream (Of a) m r -> Stream (Of (P.Either a1 b)) m1 r1
+branch m0 m1 s = s & copy & m1 & distribute & m0 & unseparate & maps sumToEither
+
+eitherToPair :: (P.Monad m) => Stream (Of (P.Either Double Double)) m r -> Stream (Of (Double,Double)) m r
+eitherToPair s = loop Nothing Nothing s where
+  loop stateL stateR str = case str of
+    Return r -> P.return r
+    Effect m -> Effect (P.liftM (loop stateL stateR) m)
+    Step (P.Left l :> rest) -> case stateR of
+      Nothing -> loop (Just l) Nothing rest
+      Just r' -> do
+        yield (l,r')
+        loop Nothing Nothing rest
+    Step (P.Right r :> rest) -> case stateL of
+      Nothing -> loop Nothing (Just r) rest
+      Just l' -> do
+        yield (l',r)
+        loop Nothing Nothing rest
+
+maPipe :: (P.Functor f, P.Monad (t (Stream f m2)), P.Monad m1, P.Monad m2, P.Monad m, S.MFunctor t, S.MonadTrans t) => (t (Stream f m2) r2 -> Stream (Of a1) (Stream (Of a1) m1) r1) -> (Stream (Of a) (Stream (Of a) m) r -> Stream f (t m2) r2) -> Stream (Of a) m r -> Stream (Of a1) m1 r1
+maPipe m0 m1 s = s & copy & m1 & distribute & m0 & unseparate & maps unify
+  where
+    unify :: S.Sum (Of a) (Of a) m -> Of a m
+    unify (S.InL a) = a
+    unify (S.InR a) = a
 
 scan0 :: P.Monad m => (x -> a -> x) -> (a -> x) -> (x -> b) -> Stream (Of a) m r -> Stream (Of b) m r
 scan0 acc beginf done s = do
@@ -135,74 +160,29 @@ scan0 acc beginf done s = do
       (P.Right (a, rest)) ->
           scan acc (beginf a) done rest
 
-
--- https://hackage.haskell.org/package/transformers-0.4.2.0/docs/Data-Functor-Sum.html
--- https://github.com/ElvishJerricco/kleisli-functors/blob/d0bde122c1d0c988b16d3737bba712931b25c963/src/Control/Kleisli/Functor.hs
-
--- https://github.com/jwiegley/notes/blob/f15aa380ddf98bc387b24a66171a62b38f236079/haskell/Teletype.hs
-
--- https://github.com/ejconlon/freeing/blob/422748981e5fc76a4aa3bf1d25eca479e4c54085/src/Freeing.hs
-
--- https://github.com/Tr1p0d/code-snippets/blob/2403ae3e97c3b4f8e27fcd5cb96b432c4f4ea0e4/ea/src/GeneticPipeline/GeneticPipeline.hs
+data AvE a = AvE { actual :: a, expected :: a }
 
 
-
-id' :: (P.Monad m) => Pipe a a m r
-id' = map P.identity
--- S.hoist S.lift (each [1..5]) :: Stream (Of P.Int) (P.StateT P.Int IO) ()
--- S.liftM (S.hoist S.lift) id'
-
--- firstS :: (P.Monad m) => Pipe b c m r -> Pipe (b,d) (c,d) m r
-firstS :: (P.Monad m) =>
-    (Stream (Of b) (P.StateT d m) r ->
-      Stream (Of c) (P.StateT d m) r) ->
-    Stream (Of (b, d)) (P.StateT d m) r ->
-    Stream (Of (c, d)) (P.StateT d m) r
-firstS p s = s & storeSnd & p & restoreSnd
-
-firstS' p s = s & storeSnd & P.liftM (S.hoist S.lift) p & restoreSnd
-
-t1 :: (P.Monad m) =>
-    (Stream (Of a) m r ->
-      Stream (Of b) m r) ->
-    Stream (Of a) (P.StateT d m) r ->
-    Stream (Of b) (P.StateT d m) r
-t1 p s = P.undefined -- S.hoist S.lift
-
-storeSnd :: (P.Monad m) => Stream (Of (b,d)) (P.StateT d m) r -> Stream (Of b) (P.StateT d m) r
-storeSnd = loop where
-  loop s = case s of
-    Return r -> pure r
-    Effect m -> Effect (P.liftM loop m)
-    Step ((b,d) :> rest) -> Effect $ do
-        P.put d
-        pure (Step (b :> loop rest))
-
-restoreSnd :: (P.Monad m) => Stream (Of b) (P.StateT d m) r -> Stream (Of (b,d)) (P.StateT d m) r
-restoreSnd = loop where
-  loop s = case s of
-    Return r -> pure r
-    Effect m -> Effect (P.liftM loop m)
-    Step (b :> rest) -> Effect $ do
-        d <- P.get
-        pure (Step ((b,d) :> loop rest))
-
-
-
+foldAuto :: Double -> L.Fold Double Double
+foldAuto b = L.Fold step Nothing done where
+  step Nothing a = Just a
+  step (Just x) a = Just (x*b+a)
+  done Nothing = P.nan
+  done (Just x) = x
 
 stdAuto ::
     Double ->
     Stream (Of Double) IO () ->
     Stream (Of Double) IO () ->
     Stream (Of Double) IO ()
-stdAuto r b x = zipWith (\(x',max') b' -> x' + max' * b') (x & L.purely scan ((,) <$> foldid <*> ma r)) b
+stdAuto r b x = zipWith (\(x',max') b' -> x' + max' * b') (x & L.purely scan ((,) <$> delay1 <*> ma r)) b
 
 stdAuto' ::
     Double ->
     Stream (Of Double) IO () ->
     Stream (Of Double) IO () ->
     Stream (Of (Double, Double, Double, Double)) IO ()
-stdAuto' r b x = zipWith3 (\x'' (x',max') b' -> (x'', x', max', b')) x (x & L.purely scan ((,) <$> foldid <*> ma r)) b
+stdAuto' r b x = zipWith3 (\x'' (x',max') b' -> (x'', x', max', b')) x (x & L.purely scan ((,) <$> delay1 <*> ma r)) b
 
 main :: IO ()
 main = do
@@ -257,6 +237,14 @@ main = do
 ```include
 other/answer.md
 ```
+
+Other Steaming Examples
+---
+
+- https://github.com/ElvishJerricco/kleisli-functors/blob/d0bde122c1d0c988b16d3737bba712931b25c963/src/Control/Kleisli/Functor.hs
+- https://github.com/jwiegley/notes/blob/f15aa380ddf98bc387b24a66171a62b38f236079/haskell/Teletype.hs
+- https://github.com/ejconlon/freeing/blob/422748981e5fc76a4aa3bf1d25eca479e4c54085/src/Freeing.hs
+- https://github.com/Tr1p0d/code-snippets/blob/2403ae3e97c3b4f8e27fcd5cb96b432c4f4ea0e4/ea/src/GeneticPipeline/GeneticPipeline.hs
 
 <div class="footer">
 
