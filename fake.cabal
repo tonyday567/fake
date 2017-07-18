@@ -111,7 +111,8 @@ executable fake-example
     foldl,
     chart-unit,
     primitive,
-    pretty-simple
+    pretty-simple,
+    containers
   default-extensions:
     NoImplicitPrelude,
     UnicodeSyntax,

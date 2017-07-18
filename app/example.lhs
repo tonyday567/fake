@@ -75,7 +75,7 @@ import Fake.Data
 import System.Random.MWC
 import qualified Control.Foldl as L
 import qualified Streaming as S
-import Streaming.Prelude
+import Streaming.Prelude hiding (delay)
 import Streaming.Internal
 import Online
 import qualified NumHask.Prelude as P
@@ -83,6 +83,7 @@ import NumHask.Prelude (Maybe(..), IO, (&), ($), (.), (+), (*), (/), div, Double
 import Chart hiding (Wrapped, Unwrapped, each, (:>), Getter)
 import Control.Monad.Primitive (PrimState)
 import Text.Pretty.Simple (pPrint)
+import qualified Data.Sequence as Seq
 
 \end{code}
 
@@ -113,16 +114,15 @@ rvStd gen = rv_ gen (repeat 0) (repeat 1)
 stdReg :: L.PrimMonad m => Gen (PrimState m) -> Stream (Of (Double, Double)) m ()
 stdReg gen = xy_ (repeat 0) (repeat 1) (rvStd gen) (rvStd gen)
 
-delay1 :: L.Fold Double Double
-delay1 = L.Fold (\_ a -> a) (0/0) P.identity
--- just delaying the stream via `yield P.nan >> s` say doesn't really work, as the copy . _ . unseparate trick streams the nan first.  Streams are not zippy by ordering when the logic gets loopy
+delay1 :: L.Fold a (Maybe a)
+delay1 = L.Fold (\_ a -> Just a) Nothing P.identity
+-- just delaying the stream via `yield P.nan >> s` say doesn't really work, as the copy . _1 . unseparate trick streams the nan first.  Streams are not zippy by ordering when the logic gets loopy
 
-delayn :: P.Int -> L.Fold Double Double
-delayn n = L.Fold (\_ a -> a) (0/0) P.identity
--- just delaying the stream via `yield P.nan >> s` say doesn't really work, as the copy . _ . unseparate trick streams the nan first.  Streams are not zippy by ordering when the logic gets loopy
+delay_ :: P.Int -> L.Fold a (Maybe a)
+delay_ n = L.Fold (\x a -> Seq.drop 1 $ x Seq.|> Just a) (Seq.fromList $ P.replicate n Nothing) ((\case { Seq.EmptyL -> Nothing; (x Seq.:< _) -> x}) . Seq.viewl)
 
-
-
+delay :: (P.BoundedField a) => P.Int -> L.Fold a a
+delay n = P.fmap (P.fromMaybe P.nan) (delay_ (n+1))
 
 -- | branching pipe
 -- each [1..4] & branch (L.purely scan L.sum) (map (*10)) & eitherToPair & toList_
@@ -145,6 +145,7 @@ eitherToPair s = loop Nothing Nothing s where
         yield (l',r)
         loop Nothing Nothing rest
 
+
 maPipe :: (P.Functor f, P.Monad (t (Stream f m2)), P.Monad m1, P.Monad m2, P.Monad m, S.MFunctor t, S.MonadTrans t) => (t (Stream f m2) r2 -> Stream (Of a1) (Stream (Of a1) m1) r1) -> (Stream (Of a) (Stream (Of a) m) r -> Stream f (t m2) r2) -> Stream (Of a) m r -> Stream (Of a1) m1 r1
 maPipe m0 m1 s = s & copy & m1 & distribute & m0 & unseparate & maps unify
   where
@@ -152,6 +153,7 @@ maPipe m0 m1 s = s & copy & m1 & distribute & m0 & unseparate & maps unify
     unify (S.InL a) = a
     unify (S.InR a) = a
 
+-- | scan0 (\_ a -> a) P.identity P.identity == P.identity
 scan0 :: P.Monad m => (x -> a -> x) -> (a -> x) -> (x -> b) -> Stream (Of a) m r -> Stream (Of b) m r
 scan0 acc beginf done s = do
     n <- S.lift $ next s
@@ -160,40 +162,33 @@ scan0 acc beginf done s = do
       (P.Right (a, rest)) ->
           scan acc (beginf a) done rest
 
-data AvE a = AvE { actual :: a, expected :: a }
-
-
-foldAuto :: Double -> L.Fold Double Double
-foldAuto b = L.Fold step Nothing done where
-  step Nothing a = Just a
-  step (Just x) a = Just (x*b+a)
-  done Nothing = P.nan
-  done (Just x) = x
-
+-- stdAuto 1 (repeat 1) (each t1) & to
 stdAuto ::
     Double ->
     Stream (Of Double) IO () ->
     Stream (Of Double) IO () ->
     Stream (Of Double) IO ()
-stdAuto r b x = zipWith (\(x',max') b' -> x' + max' * b') (x & L.purely scan ((,) <$> delay1 <*> ma r)) b
-
-stdAuto' ::
-    Double ->
-    Stream (Of Double) IO () ->
-    Stream (Of Double) IO () ->
-    Stream (Of (Double, Double, Double, Double)) IO ()
-stdAuto' r b x = zipWith3 (\x'' (x',max') b' -> (x'', x', max', b')) x (x & L.purely scan ((,) <$> delay1 <*> ma r)) b
+stdAuto r b x =
+    x &
+    L.purely scan ((,) <$> delay 0 <*> delay 1) &
+    L.purely scan ((,) <$>
+                   L.handles _1 (delay 0) <*>
+                   L.handles _2 (L.handles (filtered (P.not . P.isNaN)) (ma r)) &
+                    P.fmap (\(x',y') -> (x',if P.isNaN y' then 0 else y'))) &
+    drop 2 &
+    (zipWith (\b' (x',y) -> x'+b'*y) b)
 
 main :: IO ()
 main = do
     o :: Opts Unwrapped <- unwrapRecord "testing fake data"
-    let n = P.fromMaybe 10000 (P.fromIntegral <$> streamMax o)
+    -- let n = P.fromMaybe 10000 (P.fromIntegral <$> streamMax o)
     let c = P.fromMaybe 0.8 (testCorr o)
     let r = P.fromMaybe 0.99 (rateCorr o)
     gen <- create
+    pure ()
 
 -- (n,eff) <- rvsp_ gen (repeat 0.5) & L.purely scan (corr 0.99) & drop 3 & copy & take 1000 & toList_ <&> take 100 <&> l1d <&> scratch & length <&> lazily
-
+{-
     avCorr <-
             rvsp_ gen (repeat 0 & take (n `P.div` 2) >> repeat c) &
             L.purely scan (corr (ma r) (std r)) &
@@ -230,6 +225,8 @@ main = do
 
 
     fileSvg "other/scratch.svg" (600,400) $ withChart def (lineChart [LineConfig 0.002 (Color 0.5 0.8 0.5 1), LineConfig 0.002 (Color 0.5 0.5 0.5 1)]) [P.zipWith V2 [0..] a, P.take n $ P.zipWith V2 [0..] b]
+
+-}
 
 
 \end{code}
