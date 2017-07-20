@@ -45,6 +45,20 @@ auto-correlation
 
 <img style="border:2px solid grey" src="other/autocorr.svg">
 
+Dependencies across moments
+---
+
+\begin{align}
+
+x_{t+1} & = (alpha_t^x + beta_t^{x->x} * ma_t^x + beta_t^{s->x} * std_t^x) + s_{t+1}\\
+s_{t+1} & = (alpha_t^s + beta_t^{x->s} * ma_t^x + beta_t^{s->s} * std_t^x) * N(0,1)
+
+
+\end{align}
+
+
+
+
 
 [ghc options](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/flags.html#flag-reference)
 ---
@@ -266,6 +280,42 @@ Other Steaming Examples
 - https://github.com/jwiegley/notes/blob/f15aa380ddf98bc387b24a66171a62b38f236079/haskell/Teletype.hs
 - https://github.com/ejconlon/freeing/blob/422748981e5fc76a4aa3bf1d25eca479e4c54085/src/Freeing.hs
 - https://github.com/Tr1p0d/code-snippets/blob/2403ae3e97c3b4f8e27fcd5cb96b432c4f4ea0e4/ea/src/GeneticPipeline/GeneticPipeline.hs
+
+
+Regression
+---
+
+https://en.wikipedia.org/wiki/Regression_analysis
+https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics)
+https://stats.stackexchange.com/questions/81740/recursive-online-regularised-least-squares-algorithm
+
+Online ML
+---
+
+https://en.wikipedia.org/wiki/Online_machine_learning
+
+$$\Gamma _{i}=\Gamma _{i-1}-{\frac {\Gamma _{i-1}x_{i}x_{i}^{T}\Gamma _{i-1}}{1+x_{i}^{T}\Gamma _{i-1}x_{i}}}$$
+
+$$w_{i}=w_{i-1}-\Gamma _{i}x_{i}(x_{i}^{T}w_{i-1}-y_{i})$$
+
+https://stats.stackexchange.com/questions/81740/recursive-online-regularised-least-squares-algorithm
+https://stats.stackexchange.com/questions/6920/efficient-online-linear-regression
+
+
+skewness
+---
+
+https://stats.stackexchange.com/questions/6874/exponential-weighted-moving-skewness-kurtosis
+https://stats.stackexchange.com/questions/234460/online-calculation-of-exponential-moving-skewness-in-r-code
+
+
+
+autocorrelation
+---
+
+https://en.wikipedia.org/wiki/Recursive_least_squares_filter
+
+
 
 <div class="footer">
 

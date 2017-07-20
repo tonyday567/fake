@@ -25,6 +25,14 @@
 <p><img style="border:2px solid grey" src="other/reg.svg"></p>
 <h2 id="auto-correlation">auto-correlation</h2>
 <p><img style="border:2px solid grey" src="other/autocorr.svg"></p>
+<h2 id="dependencies-across-moments">Dependencies across moments</h2>
+<span class="math display">\[\begin{align}
+
+x_{t+1} &amp; = (alpha_t^x + beta_t^{x-&gt;x} * ma_t^x + beta_t^{s-&gt;x} * std_t^x) + s_{t+1}\\
+s_{t+1} &amp; = (alpha_t^s + beta_t^{x-&gt;s} * ma_t^x + beta_t^{s-&gt;s} * std_t^x) * N(0,1)
+
+
+\end{align}\]</span>
 <h2 id="ghc-options"><a href="https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/flags.html#flag-reference">ghc options</a></h2>
 <div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="ot">{-# OPTIONS_GHC -Wall #-}</span>
 <span class="ot">{-# OPTIONS_GHC -fno-warn-type-defaults #-}</span></code></pre></div>
@@ -150,6 +158,17 @@ stdAuto r b x <span class="fu">=</span>
     drop <span class="dv">2</span> <span class="fu">&amp;</span>
     (zipWith (\b&#39; (x&#39;,y) <span class="ot">-&gt;</span> x&#39;<span class="fu">+</span>b&#39;<span class="fu">*</span>y) b)
 
+
+<span class="ot">scratchRegression ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()
+scratchRegression n r a b <span class="fu">=</span> <span class="kw">do</span>
+    g <span class="ot">&lt;-</span> create
+    rc <span class="ot">&lt;-</span> xy_ (repeat a) (repeat b) (rvStd g) (rvStd g) <span class="fu">&amp;</span> take n <span class="fu">&amp;</span> L.purely scan ((,) <span class="fu">&lt;$&gt;</span> alpha (ma r) <span class="fu">&lt;*&gt;</span> beta (ma r)) <span class="fu">&amp;</span> drop <span class="dv">2</span> <span class="fu">&amp;</span> toList_
+    <span class="kw">let</span> a&#39; <span class="fu">=</span> P.fst <span class="fu">&lt;$&gt;</span> rc
+    <span class="kw">let</span> b&#39; <span class="fu">=</span> P.snd <span class="fu">&lt;$&gt;</span> rc
+    fileSvg <span class="st">&quot;other/reg.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>) <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.8</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] b&#39;, P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] a&#39;, P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] (P.repeat a), P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] (P.repeat b)]
+
+
+
 <span class="ot">main ::</span> <span class="dt">IO</span> ()
 main <span class="fu">=</span> <span class="kw">do</span>
 <span class="ot">    o ::</span> <span class="dt">Opts</span> <span class="dt">Unwrapped</span> <span class="ot">&lt;-</span> unwrapRecord <span class="st">&quot;testing fake data&quot;</span>
@@ -199,7 +218,6 @@ main <span class="fu">=</span> <span class="kw">do</span>
 
     fileSvg <span class="st">&quot;other/corrjump.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>) <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] corrL, P.take n <span class="fu">$</span> P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] (P.repeat c)]
 
-
     autoEst <span class="ot">&lt;-</span> stdAuto r (repeat <span class="dv">10</span>) (rvStd gen ) <span class="fu">&amp;</span> take n <span class="fu">&amp;</span> L.purely scan (autocorr (ma r) (corr (ma r) (std r))) <span class="fu">&amp;</span> drop <span class="dv">3</span> <span class="fu">&amp;</span> toList_
     fileSvg <span class="st">&quot;other/autocorr.svg&quot;</span> (<span class="dv">600</span>,<span class="dv">400</span>) <span class="fu">$</span> withChart def (lineChart [<span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.8</span> <span class="fl">0.5</span> <span class="dv">1</span>), <span class="dt">LineConfig</span> <span class="fl">0.002</span> (<span class="dt">Color</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="fl">0.5</span> <span class="dv">1</span>)]) [P.zipWith <span class="dt">V2</span> [<span class="dv">0</span><span class="fu">..</span>] autoEst]
 
@@ -212,6 +230,14 @@ main <span class="fu">=</span> <span class="kw">do</span>
 <li>https://github.com/ejconlon/freeing/blob/422748981e5fc76a4aa3bf1d25eca479e4c54085/src/Freeing.hs</li>
 <li>https://github.com/Tr1p0d/code-snippets/blob/2403ae3e97c3b4f8e27fcd5cb96b432c4f4ea0e4/ea/src/GeneticPipeline/GeneticPipeline.hs</li>
 </ul>
+<h2 id="regression">Regression</h2>
+<p>https://en.wikipedia.org/wiki/Regression_analysis https://en.wikipedia.org/wiki/Linear_least_squares_(mathematics) https://stats.stackexchange.com/questions/81740/recursive-online-regularised-least-squares-algorithm</p>
+<h2 id="online-ml">Online ML</h2>
+<p>https://en.wikipedia.org/wiki/Online_machine_learning</p>
+<p><span class="math display">\[\Gamma _{i}=\Gamma _{i-1}-{\frac {\Gamma _{i-1}x_{i}x_{i}^{T}\Gamma _{i-1}}{1+x_{i}^{T}\Gamma _{i-1}x_{i}}}\]</span></p>
+<p><span class="math display">\[w_{i}=w_{i-1}-\Gamma _{i}x_{i}(x_{i}^{T}w_{i-1}-y_{i})\]</span></p>
+<h2 id="autocorrelation">autocorrelation</h2>
+<p>https://en.wikipedia.org/wiki/Recursive_least_squares_filter</p>
 <div class="footer">
 <p>Love to <a href="https://haskell-lang.org/">haskell</a>, <a href="https://docs.haskellstack.org/en/stable/README/">stack</a>, <a href="http://pandoc.org/">pandoc</a>, <a href="https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference">mathjax</a> and <a href="https://www.stackage.org/package/doctest">doctest</a>.</p>
 </div>
