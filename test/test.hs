@@ -8,7 +8,7 @@ import Test.DocTest
 
 main :: IO ()
 main = do
-    doctest [ "src/Fake/Data.hs"]
+    doctest [ "src/Online/Random.hs"]
     defaultMain tests
 
 tests :: TestTree

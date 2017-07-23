@@ -1,7 +1,3 @@
-{-
-various generations of fake data
--}
-
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE DataKinds #-}
@@ -10,9 +6,9 @@ various generations of fake data
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 
-module Fake.Data where
+module Online.Random where
 
-import Chart hiding (sample)
+-- import Chart hiding (sample)
 import NumHask.Prelude
 
 import Control.Monad.Primitive (PrimState, PrimMonad)
@@ -93,8 +89,3 @@ y_ a b e x = S.zipWith (+) e $ S.zipWith3 (\a' b' x' -> b' * x' + a') a b x
 -- True
 xy_ :: PrimMonad m => S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of (Double, Double)) m ()
 xy_ a b e x = S.zipWith (\(x',y) e' -> (x',y+e')) (S.zipWith3 (\a' b' x' -> (x',b' * x' + a')) a b x) e
-
-
-
-
-

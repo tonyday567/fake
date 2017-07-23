@@ -2,7 +2,7 @@
 other/header.md
 ```
 
-fake
+online-random
 ===
 
 scratchpad
@@ -95,7 +95,7 @@ s_{t+1} & = (alpha_t^s + beta_t^{x->s} * ma_t^x + beta_t^{s->s} * std_t^x) * N(0
 
 \begin{code}
 import Options.Generic
-import Fake.Data
+import Online.Random
 import System.Random.MWC
 import qualified Control.Foldl as L
 import qualified Streaming as S
@@ -315,9 +315,6 @@ autocorrelation
 
 https://en.wikipedia.org/wiki/Recursive_least_squares_filter
 
-
-
-<div class="footer">
-
-Love to [haskell](https://haskell-lang.org/), [stack](https://docs.haskellstack.org/en/stable/README/), [pandoc](http://pandoc.org/), [mathjax](https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference) and [doctest](https://www.stackage.org/package/doctest).
-</div>
+```include
+other/footer.md
+```

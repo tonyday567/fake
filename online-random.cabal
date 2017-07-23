@@ -1,15 +1,13 @@
-name:
-  fake
-version:
-  0.0.1
+name: online-random
+version: 0.0.1
 synopsis:
-  See readme.md
+  Random numeric streams
 description:
-  See readme.md for description.
+  Random numeric streams used to test the online library.
 category:
   project
 homepage:
-  https://github.com/tonyday567/fake
+  https://github.com/tonyday567/online-random
 license:
   BSD3
 license-file:
@@ -30,6 +28,7 @@ extra-source-files:
   stack.yaml
   other/lhs.css
   other/header.md
+  other/footer.md
 library
   default-language:
     Haskell2010
@@ -37,7 +36,7 @@ library
   hs-source-dirs:
     src
   exposed-modules:
-    Fake.Data
+    Online.Random
   build-depends:
     base >= 4.7 && < 5,
     foldl,
@@ -85,7 +84,7 @@ library
     TypeFamilies,
     TypeOperators
 
-executable fake-example
+executable online-random-example
   default-language:
     Haskell2010
   ghc-options:
@@ -103,7 +102,7 @@ executable fake-example
     protolude,
     numhask,
     optparse-generic,
-    fake,
+    online-random,
     online,
     mwc-random,
     mwc-probability,
@@ -165,7 +164,7 @@ test-suite test
     tasty-quickcheck,
     doctest,
     protolude,
-    fake
+    online-random
   default-extensions:
     NoImplicitPrelude,
     UnicodeSyntax,

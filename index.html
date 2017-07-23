@@ -2,7 +2,7 @@
 <script type="text/javascript" async
   src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
 </script>
-<h1 id="fake">fake</h1>
+<h1 id="online-random">online-random</h1>
 <h2 id="scratchpad">scratchpad</h2>
 <p><img style="border:2px solid grey" src="other/scratch.svg"></p>
 <h2 id="alpha">alpha</h2>
@@ -56,7 +56,7 @@ s_{t+1} &amp; = (alpha_t^s + beta_t^{x-&gt;s} * ma_t^x + beta_t^{s-&gt;s} * std_
 <li><a href="https://www.github.com/tonyday567/numhask">numhask</a></li>
 </ul>
 <div class="sourceCode"><pre class="sourceCode literate haskell"><code class="sourceCode haskell"><span class="kw">import </span><span class="dt">Options.Generic</span>
-<span class="kw">import </span><span class="dt">Fake.Data</span>
+<span class="kw">import </span><span class="dt">Online.Random</span>
 <span class="kw">import </span><span class="dt">System.Random.MWC</span>
 <span class="kw">import qualified</span> <span class="dt">Control.Foldl</span> <span class="kw">as</span> <span class="dt">L</span>
 <span class="kw">import qualified</span> <span class="dt">Streaming</span> <span class="kw">as</span> <span class="dt">S</span>
@@ -236,8 +236,12 @@ main <span class="fu">=</span> <span class="kw">do</span>
 <p>https://en.wikipedia.org/wiki/Online_machine_learning</p>
 <p><span class="math display">\[\Gamma _{i}=\Gamma _{i-1}-{\frac {\Gamma _{i-1}x_{i}x_{i}^{T}\Gamma _{i-1}}{1+x_{i}^{T}\Gamma _{i-1}x_{i}}}\]</span></p>
 <p><span class="math display">\[w_{i}=w_{i-1}-\Gamma _{i}x_{i}(x_{i}^{T}w_{i-1}-y_{i})\]</span></p>
+<p>https://stats.stackexchange.com/questions/81740/recursive-online-regularised-least-squares-algorithm https://stats.stackexchange.com/questions/6920/efficient-online-linear-regression</p>
+<h2 id="skewness">skewness</h2>
+<p>https://stats.stackexchange.com/questions/6874/exponential-weighted-moving-skewness-kurtosis https://stats.stackexchange.com/questions/234460/online-calculation-of-exponential-moving-skewness-in-r-code</p>
 <h2 id="autocorrelation">autocorrelation</h2>
 <p>https://en.wikipedia.org/wiki/Recursive_least_squares_filter</p>
+<hr />
 <div class="footer">
-<p>Love to <a href="https://haskell-lang.org/">haskell</a>, <a href="https://docs.haskellstack.org/en/stable/README/">stack</a>, <a href="http://pandoc.org/">pandoc</a>, <a href="https://math.meta.stackexchange.com/questions/5020/mathjax-basic-tutorial-and-quick-reference">mathjax</a> and <a href="https://www.stackage.org/package/doctest">doctest</a>.</p>
+<p>Powered by <a href="https://haskell-lang.org/">haskell</a>, <a href="https://docs.haskellstack.org/en/stable/README/">stack</a> and <a href="http://pandoc.org/">pandoc</a>.</p>
 </div>
