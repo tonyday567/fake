@@ -62,8 +62,8 @@ rvsp gen n c = do
 -- >>> t `eqlp` [(-0.8077385934202513,-1.4516277637673076),(-0.4900206084002882,-1.2049666569226198),(0.7821576365295985,1.9407501144914514)]
 -- True
 rvsp_ :: Gen (PrimState IO) -> S.Stream (S.Of Double) IO () -> S.Stream (S.Of (Double, Double)) IO ()
-rvsp_ gen c =
-    S.zipWith3 (\x y c' -> (x, c' * x + sqrt (1 - c' * c') * y)) (rvs_ gen) (rvs_ gen) c
+rvsp_ gen =
+    S.zipWith3 (\x y c' -> (x, c' * x + sqrt (1 - c' * c') * y)) (rvs_ gen) (rvs_ gen)
 
 -- | rv_ is a normally distributed stream where mean and sd are supplied by other streams
 -- >>> t <- rv_ gen (S.repeat 10) (S.repeat 0.1) & S.take n & S.toList_
