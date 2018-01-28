@@ -19,40 +19,29 @@
 -- [chart-unit](https://www.github.com/tonyday567/chart-unit)
 -- [numhask](https://www.github.com/tonyday567/numhask)
 
-import Options.Generic
-import Online.Random
-import System.Random.MWC
-import qualified Control.Foldl as L
-import Streaming.Prelude
-import Online
-import qualified NumHask.Prelude as P
-import NumHask.Prelude ((<*>), (<$>), Maybe(..), IO, (&), ($), (.), div, Double, (>>), Integer, (<>), (.), fromMaybe)
 import Chart
--- import Diagrams.Backend.SVG
--- import Text.Pretty.Simple (pPrint)
 import Control.Lens hiding (Wrapped, (&), (:>), Unwrapped)
 import Data.Generics.Labels()
+import NumHask.Prelude ((<*>), (<$>), Maybe(..), IO, (&), ($), div, Double, (>>), Integer, (<>), fromMaybe)
+import Online
+import Online.Random
+import Options.Generic
+import Streaming.Prelude
+import System.Random.MWC
+import qualified Control.Foldl as L
+import qualified NumHask.Prelude as P
 
 -- [hoogle](https://www.stackage.org/package/hoogle)
 
 -- scratch :: Chart b -> IO ()
 -- scratch = fileSvg "other/scratchpad.svg" (600,400)
 
-l1d :: [Double] -> Chart b
-l1d = withHud_ def sixbyfour (lineChart [LineOptions 0.002 (ucolor 0.5 0.8 0.5 1)]) . (:[]) . P.zipWith Pair [0..]
- 
 lopts :: [LineOptions]
 lopts =
   P.zipWith
     (\x y -> LineOptions x (withOpacity (d3Colors1 y) 0.6))
     [0.001, 0.001, 0.001]
     [0,1,2]
-
-s1ds :: P.FilePath -> Stream (Of [Double]) IO () -> IO ()
-s1ds f s = do
-    xs <- toList_ $ take 10000 s
-    fileSvg f def $ withHud_ def sixbyfour (lineChart lopts) $
-       lineOneD <$> P.transpose xs
 
 data Opts w = Opts
     { streamMax :: w ::: Maybe Integer <?> "typical size of data stream"
