@@ -1,5 +1,5 @@
 name: online-random
-version: '0.0.1'
+version: '0.0.1.0'
 synopsis: Random numeric streams
 description: Random numeric streams used to test the online library.
 category: project
@@ -46,16 +46,19 @@ default-extensions:
 - TypeFamilies
 - TypeOperators
 dependencies:
-- base >=4.7 && <5
-- protolude
 library:
   source-dirs: src
   exposed-modules:
   - Online.Random
   dependencies:
+  - base >=4.7 && <5
+  - foldl
+  - lens
+  - online
   - mwc-random
   - mwc-probability
   - numhask
+  - containers
   - primitive
   - streaming
 executables:
@@ -69,7 +72,11 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - base >=4.7 && <5
+    - protolude
+    - foldl
     - numhask
+    - generic-lens-labels
     - optparse-generic
     - online-random
     - online
@@ -77,14 +84,13 @@ executables:
     - streaming
     - foldl
     - chart-unit
-    - primitive
-    - pretty-simple
-    - containers
     - lens
 tests:
   test:
     main: test.hs
     source-dirs: test
     dependencies:
+    - base >=4.7 && <5
     - tasty
+    - protolude
     - doctest
