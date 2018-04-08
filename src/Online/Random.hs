@@ -42,7 +42,7 @@ import Data.List ((!!))
 -- >>> t `eq'` [-0.8077385934202513,-1.3423948150518445,-0.4900206084002882]
 -- True
 rvs :: Gen (PrimState IO) -> Int -> IO [Double]
-rvs gen n = samples n standard gen
+rvs gen n = samples n standardNormal gen
 
 -- | rvs_ is a standard random variate stream
 -- >>> t <- rvs_ gen & S.take n & S.toList_
@@ -52,7 +52,7 @@ rvs gen n = samples n standard gen
 -- stack build --ghc-options=-fsimpl-tick-factor=1000
 -- rvs_ :: Gen (PrimState IO) -> S.Stream (S.Of Double) IO ()
 rvs_ :: PrimMonad m => Gen (PrimState m) -> S.Stream (S.Of Double) m ()
-rvs_ gen = repeatM (sample standard gen)
+rvs_ gen = repeatM (sample standardNormal gen)
 
 -- | rvsPair generates a list of correlated random variate tuples
 -- | 
@@ -79,7 +79,7 @@ rvsp_ gen =
 -- >>> t `eq'` [9.919226140657974,9.865760518494815,9.95099793915997]
 -- True
 rv_ :: PrimMonad m => Gen (PrimState m) -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m ()
-rv_ gen m s = zipWith3 (\m' s' r -> m' + s' * r) m s (repeatM (sample standard gen))
+rv_ gen m s = zipWith3 (\m' s' r -> m' + s' * r) m s (repeatM (sample standardNormal gen))
 
 rvStd :: L.PrimMonad m => Gen (PrimState m) -> Stream (Of Double) m ()
 rvStd gen = rv_ gen (repeat 0) (repeat 1)
