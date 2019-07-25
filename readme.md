@@ -79,5 +79,5 @@ workflow
 ===
 
 ~~~
-stack build --test --exec "$(stack path --local-install-root)/bin/orand" --exec "$(stack path --local-bin)/pandoc -f markdown -i other/header.md readme.md other/footer.md -t html -o index.html --filter pandoc-include --mathjax" --file-watch
+stack build --test --exec "$(stack path --local-install-root)/bin/orand" --file-watch
 ~~~
