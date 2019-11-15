@@ -13,22 +13,20 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
-import Chart.Core
-import Chart.Spot
-import Chart.Svg
-import Chart.Hud
-import Control.Lens hiding (Wrapped, (&), (:>), Unwrapped)
+import Prelude as P
+import Chart
+import Control.Lens hiding (Wrapped, (:>), Unwrapped)
 import Data.Generics.Labels()
-import NumHask.Prelude ((<*>), (<$>), Maybe(..), IO, (&), ($), div, Double, (>>), Integer, (<>), fromMaybe, (-), (+), mempty, one, (.))
 import Online
 import Online.Random
 import Options.Generic
-import Streaming.Prelude
+import Streaming.Prelude as S
 import System.Random.MWC
 import qualified Control.Foldl as L
-import qualified NumHask.Prelude as P
--- import Diagrams.Backend.SVG (SVG)
 import Codec.Picture.Types
+import Data.Maybe
+import Data.List (transpose)
+import qualified Data.Text as Text
 
 lopts :: [LineStyle]
 lopts =
@@ -55,21 +53,21 @@ instance ParseRecord (Opts Wrapped)
 
 dm :: Gen L.RealWorld -> P.Int -> P.Int -> [Double] -> L.Fold Double a -> IO [a]
 dm gen n d ss f = depMo
-           (DepMoments (repeat ss)
+           (DepMoments (S.repeat ss)
              [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9]
              (rvStd gen)
              (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5])) &
-            take n &
+            S.take n &
             L.purely scan f &
-            drop (d + 1) &
+            S.drop (d + 1) &
             toList_
 
-lineChart os ds = P.zipWith (\os' ds' -> Chart (LineA os') mempty ds') os (P.fmap SpotPoint <$> ds)
+lineChart os ds = P.zipWith (\os' ds' -> Chart (LineA os') ds') os (P.fmap SpotPoint <$> ds)
 
 writeLineChart :: P.FilePath -> [Text] -> [LineStyle] -> [[Point Double]] -> IO ()
 writeLineChart fname ts os ds = 
-  write fname (Point 600 300) $ hudSvg P.one
-    ((\t -> title (defaultTitle t) mempty) <$> ts)
+  writeChartSvg fname (Point 600 300) $ hudChartSvg unitRect
+    [((\t -> title (defaultTitle t)) <$> ts)]
     (lineChart os ds)
 
 s' :: [Double] -> IO ()
@@ -77,11 +75,11 @@ s' ss = do
   g <- create
   c <- dm g 1000 200 ss ((\x y z -> [x,y,z]) <$> autocorr (ma r) (corr (ma r) (std r)) <*> std 0.999 <*> ma 0.999)
   writeLineChart "other/scratchpad.svg"
-    [ ("beta = " <> P.show ba <>
+    [ Text.pack ("beta = " <> P.show ba <>
        " period = " <> P.show pa <> " r = " <> P.show r)
     , "auto-correlation estimate"]
     lopts
-    (P.zipWith Point ts <$> P.transpose c)
+    (P.zipWith Point ts <$> transpose c)
         where
           pa = 0.01
           ba = 1
@@ -103,9 +101,9 @@ main = do
 
     rc <-
         stdReg gen &
-        take n &
+        S.take n &
         L.purely scan ((,) <$> alpha (ma r) <*> beta (ma r)) &
-        drop d &
+        S.drop d &
         toList_
 
     let a = P.fst <$> rc
@@ -113,7 +111,7 @@ main = do
     let ts :: [Double] = P.fromIntegral <$> [d..n]
 
     writeLineChart "other/alpha.svg"
-      [ ("actual = " <> P.show 0)
+      [ Text.pack $ ("actual = " <> P.show 0)
       , "alpha estimate"]
       lopts
       [ P.zipWith Point ts a
@@ -121,7 +119,7 @@ main = do
       ]
 
     writeLineChart "other/beta.svg"
-      [ ("actual = " <> P.show 1)
+      [ Text.pack $ ("actual = " <> P.show 1)
       , "beta estimate"]
       lopts
       [ P.zipWith Point ts b
@@ -129,10 +127,10 @@ main = do
       ]
 
     corrL <-
-            rvsp_ gen (repeat 0 & take (n `div` 2) >> repeat c) &
+            rvsp_ gen (S.repeat 0 & S.take (n `div` 2) >> S.repeat c) &
             L.purely scan (corr (ma r) (std r)) &
-            take n &
-            drop d &
+            S.take n &
+            S.drop d &
             toList_
 
     writeLineChart "other/corrjump.svg"
@@ -143,17 +141,17 @@ main = do
         ]
 
     auto <- depMo
-           (DepMoments (repeat [0,1,0,1,0,0])
+           (DepMoments (S.repeat [0,1,0,1,0,0])
              [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9]
              (rvStd gen)
              (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5])) &
-            take n &
+            S.take n &
             L.purely scan (autocorr (ma r) (corr (ma r) (std r))) &
-            drop (d + 1) &
+            S.drop (d + 1) &
             toList_
 
     writeLineChart "other/autocorr.svg"
-      [ ("beta = " <> P.show ba <>
+      [ (Text.pack $ "beta = " <> P.show ba <>
             " period = " <> P.show pa <> " r = " <> P.show r)
       , "auto-correlation estimate"
       ]

@@ -2,7 +2,6 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ExtendedDefaultRules #-}
 {-# LANGUAGE LambdaCase #-}
@@ -10,31 +9,31 @@
 
 module Online.Random where
 
+import Prelude as P
 import Online
 import Control.Monad.Primitive (PrimState, PrimMonad)
-import NumHask.Prelude (IO, Int, Double, Maybe(..), Functor, Monad, Either(..), pure, ($), (+), (-), (*), sqrt, (<$>), (<*>), (.), fmap, (&))
 import Streaming.Internal
-import Streaming.Prelude hiding (delay)
+import Streaming.Prelude as S
 import System.Random.MWC
 import System.Random.MWC.Probability
 import qualified Control.Foldl as L
 import qualified Data.Sequence as Seq
-import qualified NumHask.Prelude as P
 import qualified Streaming as S
 import Control.Lens hiding ((:>), each)
 import Data.List ((!!))
+import Data.Maybe
+import GHC.Generics
 
--- instance Epsilon [Double] where nearZero = all . fmap nearZero; aboutEqual = nearZero . (-)
-
--- instance Epsilon [Double] where nearZero a = all nearZero a; aboutEqual a b = all nearZero $ zipWith (-) a b
+nearZero :: (Ord a, Fractional a) => a -> Bool
+nearZero a = a < 1e-6 && a > -1e-6
 
 -- $setup
 -- >>> :set -XFlexibleContexts
 -- >>> import Streaming.Prelude as S
 -- >>> gen <- create
 -- >>> let n = 3
--- >>> let eq' a b = P.all P.nearZero $ P.zipWith (-) a b
--- >>> let eq'p a b = P.all P.identity $ P.zipWith (\(x0,x1) (y0,y1) -> P.nearZero (x0-y0) P.&& P.nearZero (x1-y1)) a b
+-- >>> let eq' a b = P.all nearZero $ P.zipWith (-) a b
+-- >>> let eq'p a b = P.all id $ P.zipWith (\(x0,x1) (y0,y1) -> nearZero (x0-y0) P.&& nearZero (x1-y1)) a b
 --
 
 -- | rvs creates a list of standard normal random variates.
@@ -72,20 +71,20 @@ rvsp gen n c = do
 -- True
 rvsp_ :: Gen (PrimState IO) -> S.Stream (S.Of Double) IO () -> S.Stream (S.Of (Double, Double)) IO ()
 rvsp_ gen =
-    zipWith3 (\x y c' -> (x, c' * x + sqrt (1 - c' * c') * y)) (rvs_ gen) (rvs_ gen)
+    S.zipWith3 (\x y c' -> (x, c' * x + sqrt (1 - c' * c') * y)) (rvs_ gen) (rvs_ gen)
 
 -- | rv_ is a normally distributed stream where mean and sd are supplied by other streams
 -- >>> t <- rv_ gen (S.repeat 10) (S.repeat 0.1) & S.take n & S.toList_
 -- >>> t `eq'` [9.919226140657974,9.865760518494815,9.95099793915997]
 -- True
 rv_ :: PrimMonad m => Gen (PrimState m) -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m ()
-rv_ gen m s = zipWith3 (\m' s' r -> m' + s' * r) m s (repeatM (sample standardNormal gen))
+rv_ gen m s = S.zipWith3 (\m' s' r -> m' + s' * r) m s (repeatM (sample standardNormal gen))
 
 rvStd :: L.PrimMonad m => Gen (PrimState m) -> Stream (Of Double) m ()
-rvStd gen = rv_ gen (repeat 0) (repeat 1)
+rvStd gen = rv_ gen (S.repeat 0) (S.repeat 1)
 
 stdReg :: L.PrimMonad m => Gen (PrimState m) -> Stream (Of (Double, Double)) m ()
-stdReg gen = xy_ (repeat 0) (repeat 1) (rvStd gen) (rvStd gen)
+stdReg gen = xy_ (S.repeat 0) (S.repeat 1) (rvStd gen) (rvStd gen)
 
 -- | y_ is the proto-typical linear relationship
 -- y = b x + a + e
@@ -95,14 +94,14 @@ stdReg gen = xy_ (repeat 0) (repeat 1) (rvStd gen) (rvStd gen)
 -- >>> t `eq'` [-0.1501334084720959,0.155062441262396,4.973864311975887]
 -- True
 y_ :: PrimMonad m => S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m ()
-y_ a b e x = zipWith (+) e $ zipWith3 (\a' b' x' -> b' * x' + a') a b x
+y_ a b e x = S.zipWith (+) e $ S.zipWith3 (\a' b' x' -> b' * x' + a') a b x
 
 -- | xy_ returns a (x,y) regressed pair stream
 -- >>> t <- xy_ (S.repeat 0) (S.repeat 1) (rv_ gen (S.repeat 0) (S.repeat 1)) (rv_ gen (S.repeat 0) (S.repeat 1)) & S.take n & S.toList_
 -- >>> t `eq'p` [(-0.8077385934202513,-2.150133408472096),(-0.4900206084002882,-1.844937558737604),(0.7821576365295985,2.9738643119758867)]
 -- True
 xy_ :: PrimMonad m => S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of Double) m () -> S.Stream (S.Of (Double, Double)) m ()
-xy_ a b e x = zipWith (\(x',y) e' -> (x',y+e')) (zipWith3 (\a' b' x' -> (x',b' * x' + a')) a b x) e
+xy_ a b e x = S.zipWith (\(x',y) e' -> (x',y+e')) (S.zipWith3 (\a' b' x' -> (x',b' * x' + a')) a b x) e
 
 -- | traverse the same fold over a list
 foldMapL :: L.Fold a b -> L.Fold [a] [b]
@@ -126,7 +125,7 @@ foldList = P.foldr (\f -> (<*>) ((:) <$> f)) (fconst [])
 
 -- | turn a stream list into a list of streams
 streamList :: [Stream (Of Double) IO ()] -> Stream (Of [Double]) IO ()
-streamList = P.foldr (zipWith (:)) (yield [])
+streamList = P.foldr (S.zipWith (:)) (yield [])
 -- streamList [] = yield []
 -- streamList (f:fs) = zipWith (:) f (streamList fs)
 
@@ -140,20 +139,20 @@ delay_ n = L.Fold (\x a -> Seq.drop 1 $ x Seq.|> Just a) (Seq.fromList $ P.repli
 
 -- | `delay nan 1` delays a Foldable by 1 step, substituting nan at the beginning
 -- note that L.scan places the initial accumulator value at the start of the resulting Foldable/Streamable eg.
--- > L.scan (delay P.nan 1) [0..3]
+-- > L.scan (delay' P.nan 1) [0..3]
 -- [NaN,NaN,0.0,1.0,2.0]
 --
-delay :: a -> Int -> L.Fold a a
-delay begin n = fmap (P.fromMaybe begin) (delay_ (n+1))
+delay' :: a -> Int -> L.Fold a a
+delay' begin n = fmap (fromMaybe begin) (delay_ (n+1))
 
 -- | transform a stream into a tuple where the first element is the ori=ginal stream and the second element is the delayed original stream
 echo :: (P.Num a) =>
     Stream (Of a) IO () ->
     Stream (Of (a,a)) IO ()
-echo rv' = rv' & L.purely scan ((,) <$> delay 0 0 <*> delay 0 1) & drop 1
+echo rv' = rv' & L.purely scan ((,) <$> delay' 0 0 <*> delay' 0 1) & S.drop 1
 
 second :: (P.Num a) => L.Fold b c -> Stream (Of (a,b)) IO () -> Stream (Of (a,c)) IO ()
-second f s = s & L.purely scan ((,) <$> L.handles _1 (delay 0 0) <*> L.handles _2 f) & drop 1
+second f s = s & L.purely scan ((,) <$> L.handles _1 (delay' 0 0) <*> L.handles _2 f) & S.drop 1
 
 -- | branching pipe
 -- each [1..4] & branch (drop 1 & L.purely scan L.sum) (map show) & eitherToPair & toList_
@@ -209,19 +208,19 @@ data DepMoments a = DepMoments
     , rv :: Stream (Of a) IO ()
     , fx :: [(Int, Int)]
     , fstd :: [(Int, Int)]
-    } deriving (P.Generic)
+    } deriving (Generic)
 
 -- defModel :: [Double] -> IO (DepMoments Double)
 defModel :: Gen L.RealWorld -> [Double] -> DepMoments Double
-defModel g bs = DepMoments (repeat bs) [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9] (rvStd g) (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5])
+defModel g bs = DepMoments (S.repeat bs) [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9] (rvStd g) (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5])
 
 -- | create a stream from a DepMoments model
--- >>> toList_ $ depMo (DepMoments (repeat [0,0,0,1,0,0]) [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9] (each [0..5]) (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5]))
+-- >>> toList_ $ depMo (DepMoments (S.repeat [0,0,0,1,0,0]) [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9] (each [0..5]) (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5]))
 -- [0.0,1.0,2.0,3.0,4.0,5.0]
 --
 -- mean momentum
--- >>> toList_ $ depMo (DepMoments (repeat [0,1,0,1,0,0]) [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9] (each [0..5]) (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5]))
--- [0.0,1.0,2.3690036900369003,3.8432683919744113,5.369929916241361,6.931240249360272]
+-- >>> toList_ $ depMo (DepMoments (S.repeat [0,1,0,1,0,0]) [mconst 1, ma 0.9, std 0.9, mconst 1, ma 0.9, std 0.9] (each [0..5]) (P.zip [0..2] [0..2]) (P.zip [3..5] [3..5]))
+-- [0.0,1.0,2.3690036900369003,3.8432683919744113,5.369929916241361,6.931240249360273]
 --
 depMo ::
     DepMoments Double ->
@@ -230,7 +229,7 @@ depMo d =
     rv d &
     echo &
     second (foldList (xxs d)) &
-    zipWith (\bs (rv0,xs) ->
+    S.zipWith (\bs (rv0,xs) ->
                L.fold L.sum (P.fmap (\(bi, xi) -> bs!!bi * xs!!xi) (fx d)) +
                rv0 * L.fold L.sum (P.fmap (\(bi, xi) -> bs!!bi * xs!!xi) (fstd d)))
     (betas d)

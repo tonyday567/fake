@@ -2,7 +2,7 @@
 
 module Main where
 
-import Protolude
+import Prelude
 import Test.DocTest
 
 main :: IO ()
