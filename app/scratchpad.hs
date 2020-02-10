@@ -27,6 +27,7 @@ import Codec.Picture.Types
 import Data.Maybe
 import Data.List (transpose)
 import qualified Data.Text as Text
+import Readme.Lhs
 
 lopts :: [LineStyle]
 lopts =
@@ -159,4 +160,10 @@ main = do
         [ P.zipWith Point ts auto
         ]
 
+    _ <- runOutput
+      ("readme.md", GitHubMarkdown)
+      ("index.html", Html)
+      $ pure ()
+
+    pure ()  
 

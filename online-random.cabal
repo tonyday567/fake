@@ -56,6 +56,7 @@ executable orand
     , optparse-generic
     , streaming
     , text
+    , readme-lhs
   default-language: Haskell2010
 
 test-suite test

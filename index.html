@@ -1,0 +1,40 @@
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-svg.js"></script>
+<h1 id="online-random">online-random</h1>
+<p><a href="https://travis-ci.org/tonyday567/online-random"><img src="https://travis-ci.org/tonyday567/online-random.png" alt="Build Status" /></a></p>
+<p>Random stream experiments</p>
+<h2 id="scratchpad">scratchpad</h2>
+<p><img style="border:2px solid grey" src="other/scratchpad.svg"></p>
+<h2 id="alpha">alpha</h2>
+<p>$$ \begin{align} \alpha &amp; = \frac{\sum y \sum x^2 - \sum x \sum xy}{n\sum x^2 - (\sum x)^2} \ &amp; = \frac{n^2 \bar{y} \overline{x^2} - n^2 \bar{x} \overline{xy}}{n^2 \overline{x^2} - n^2 \bar{x}^2} \ &amp; = \frac{\bar{y} \overline{x^2} - \bar{x} \overline{xy}}{\overline{x^2} - \bar{x}^2} \ \end{align} $$</p>
+<p><img style="border:2px solid grey" src="other/alpha.svg"></p>
+<h2 id="beta">beta</h2>
+<p>$$ \begin{align} \beta &amp; = \frac{n\sum xy - \sum x \sum y}{n\sum x^2 - (\sum x)^2} \ &amp; = \frac{n^2 \overline{xy} - n^2 \bar{x} \bar{y}}{n^2 \overline{x^2} - n^2 \bar{x}^2} \ &amp; = \frac{\overline{xy} - \bar{x} \bar{y}}{\overline{x^2} - \bar{x}^2} \ \end{align} $$</p>
+<p><img style="border:2px solid grey" src="other/beta.svg"></p>
+<h2 id="correlation-jumping-mid-stream">correlation jumping mid-stream</h2>
+<p><img style="border:2px solid grey" src="other/corrjump.svg"></p>
+<h2 id="auto-correlation">auto-correlation</h2>
+<p><img style="border:2px solid grey" src="other/autocorr.svg"></p>
+<h2 id="dependencies-across-moments">Dependencies across moments</h2>
+<p>\begin{align}</p>
+<p>$$ x_{t+1} &amp; = (alpha_t^x + beta_t^{x-&gt;x} * ma_t^x + beta_t^{s-&gt;x} * std_t^x) + s_{t+1}\ s_{t+1} &amp; = (alpha_t^s + beta_t^{x-&gt;s} * ma_t^x + beta_t^{s-&gt;s} * std_t^x) * N(0,1) $$</p>
+<p>\end{align}</p>
+<h2 id="online-algorithm-references">online algorithm references</h2>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Online_machine_learning" class="uri">https://en.wikipedia.org/wiki/Online_machine_learning</a></li>
+</ul>
+<p>$$\Gamma <em>{i}=\Gamma </em>{i-1}-{\frac {\Gamma <em>{i-1}x</em>{i}x_{i}^{T}\Gamma <em>{i-1}}{1+x</em>{i}^{T}\Gamma <em>{i-1}x</em>{i}}}$$</p>
+<p>$$w_{i}=w_{i-1}-\Gamma <em>{i}x</em>{i}(x_{i}^{T}w_{i-1}-y_{i})$$</p>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Recursive_least_squares_filter" class="uri">https://en.wikipedia.org/wiki/Recursive_least_squares_filter</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Regression_analysis" class="uri">https://en.wikipedia.org/wiki/Regression_analysis</a></li>
+<li><a href="https://stats.stackexchange.com/questions/6920/efficient-online-linear-regression" class="uri">https://stats.stackexchange.com/questions/6920/efficient-online-linear-regression</a></li>
+</ul>
+<h2 id="streaming-examples">streaming examples</h2>
+<ul>
+<li><a href="https://github.com/ElvishJerricco/kleisli-functors/blob/d0bde122c1d0c988b16d3737bba712931b25c963/src/Control/Kleisli/Functor.hs" class="uri">https://github.com/ElvishJerricco/kleisli-functors/blob/d0bde122c1d0c988b16d3737bba712931b25c963/src/Control/Kleisli/Functor.hs</a></li>
+<li><a href="https://github.com/jwiegley/notes/blob/f15aa380ddf98bc387b24a66171a62b38f236079/haskell/Teletype.hs" class="uri">https://github.com/jwiegley/notes/blob/f15aa380ddf98bc387b24a66171a62b38f236079/haskell/Teletype.hs</a></li>
+<li><a href="https://github.com/ejconlon/freeing/blob/422748981e5fc76a4aa3bf1d25eca479e4c54085/src/Freeing.hs" class="uri">https://github.com/ejconlon/freeing/blob/422748981e5fc76a4aa3bf1d25eca479e4c54085/src/Freeing.hs</a></li>
+<li><a href="https://github.com/Tr1p0d/code-snippets/blob/2403ae3e97c3b4f8e27fcd5cb96b432c4f4ea0e4/ea/src/GeneticPipeline/GeneticPipeline.hs" class="uri">https://github.com/Tr1p0d/code-snippets/blob/2403ae3e97c3b4f8e27fcd5cb96b432c4f4ea0e4/ea/src/GeneticPipeline/GeneticPipeline.hs</a></li>
+</ul>
+<h1 id="workflow">workflow</h1>
+<pre><code>stack build --test --exec &quot;$(stack path --local-install-root)/bin/orand&quot; --file-watch</code></pre>
