@@ -34,11 +34,12 @@ library
     , mwc-random
     , online
     , primitive
-    , streaming
+    , numhask-prelude
+    , numhask-array
   default-language: Haskell2010
 
-executable orand
-  main-is: scratchpad.hs
+executable online-random
+  main-is: app.hs
   hs-source-dirs:
       app
   default-extensions: NoImplicitPrelude UnicodeSyntax NegativeLiterals OverloadedStrings
@@ -46,6 +47,7 @@ executable orand
   build-depends:
       JuicyPixels
     , base >=4.7 && <5
+    , numhask-prelude
     , chart-svg
     , foldl
     , generic-lens
@@ -54,9 +56,9 @@ executable orand
     , online
     , online-random
     , optparse-generic
-    , streaming
     , text
     , readme-lhs
+    , numhask-array
   default-language: Haskell2010
 
 test-suite test

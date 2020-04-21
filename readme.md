@@ -84,5 +84,5 @@ workflow
 ===
 
 ~~~
-stack build --test --exec "$(stack path --local-install-root)/bin/orand" --file-watch
+stack build --test --exec "$(stack path --local-install-root)/bin/online-random" --file-watch
 ~~~

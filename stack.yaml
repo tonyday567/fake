@@ -1,16 +1,23 @@
-resolver: lts-14.13
+resolver: lts-15.6
 
 packages:
   - .
-  - ../online/online
-  - ../chart-svg
-  - ../readme-lhs
+  - ../numhask-array
 
 extra-deps:
   - lucid-svg-0.7.1
   - javascript-bridge-0.2.0
-  - numhask-space-0.3.0
-  - web-rep-0.2.0
+  - numhask-space-0.3.1
+  - web-rep-0.3.1
   - box-0.1.0
+  - online-0.4.0.0
+  - chart-svg-0.0.1
+  - interpolatedstring-perl6-1.0.2
+  - palette-0.3.0.2
+  - readme-lhs-0.5.0
+  - text-format-0.3.2
+  - numhask-prelude-0.3.3
+  # - numhask-array-0.5.1
+  - numhask-hedgehog-0.3.2
 
 allow-newer: true
