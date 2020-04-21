@@ -12,23 +12,17 @@ module Online.Random where
 
 import NumHask.Prelude
 import Online
-import Control.Monad.Primitive (PrimState, PrimMonad)
+import Control.Monad.Primitive (PrimState)
 import System.Random.MWC
 import System.Random.MWC.Probability hiding (beta)
 import qualified Control.Foldl as L
-import qualified Data.Sequence as Seq
-import Control.Lens hiding ((:>), each)
-import Data.List ((!!))
-import Data.Maybe
-import GHC.Generics
-import Control.Category (id)
 
 -- $setup
 -- >>> :set -XFlexibleContexts
 -- >>> gen <- create
 -- >>> let n = 3
 -- >>> let eq' a b = all nearZero $ zipWith (-) a b
--- >>> let eq'p a b = all id $ zipWith (\(x0,x1) (y0,y1) -> nearZero (x0-y0) && nearZero (x1-y1)) a b
+-- >>> let eq'p a b = all (\x -> x) $ zipWith (\(x0,x1) (y0,y1) -> nearZero (x0-y0) && nearZero (x1-y1)) a b
 --
 
 -- | rvs creates a list of standard normal random variates.

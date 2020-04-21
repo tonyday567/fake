@@ -23,7 +23,6 @@ import Online.Random
 import Options.Generic
 import System.Random.MWC
 import qualified Control.Foldl as L
-import Codec.Picture.Types
 import Data.Maybe
 import Data.List (transpose)
 import qualified Data.Text as Text
